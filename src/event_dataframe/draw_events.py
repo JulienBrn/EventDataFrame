@@ -32,7 +32,6 @@ def draw_events(d: pd.DataFrame, channels_opt:Dict[str,DrawOpt] = {}, ax = None)
                 else:
                     channels_opt[n].type="state"
 
-        logger.debug(channels_opt)
         ax.set_ylim([0, len(channels_opt)])
         for i,n in enumerate(channels_opt.keys()):
             if channels_opt[n].type=="state":
