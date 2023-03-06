@@ -19,11 +19,12 @@ def draw_events(d: pd.DataFrame, channels_opt:Dict[str,DrawOpt] = {}, ax = None)
             _, ax = plt.subplots()
             
         l_ev = get_event_list(d)
-        for i,n in enumerate(l_ev):
+        for n in l_ev:
             if n=="END":
                 continue
             if not n in channels_opt:
                 channels_opt[n] = DrawOpt()
+        for i,n in enumerate(channels_opt.keys()):
             if channels_opt[n].draw_color==None:
                 channels_opt[n].draw_color="C"+str(i)
             if channels_opt[n].type==None:

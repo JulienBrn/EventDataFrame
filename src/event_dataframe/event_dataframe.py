@@ -31,10 +31,13 @@ class EventData:
     _d : pd.DataFrame
     _channels: Dict[str, ChannelInfo] = {}
     _is_updated: bool = False
-    _duration: float
+    _duration: float = None
     
-    def __init__(self, duration):
-        self._d = pd.DataFrame([[duration, "END", None, None, 0]], columns=["T", "event_name", "value", "old_value", "duration"])
+    def __init__(self, duration = None):
+        if duration:
+            self._d = pd.DataFrame([[duration, "END", None, None, 0]], columns=["T", "event_name", "value", "old_value", "duration"])
+        else:
+            self._d = pd.DataFrame([], columns=["T", "event_name", "value", "old_value", "duration"])
         self._duration=duration
        
     def add_channel(self, name: str, type: str, start_value: Any=None):
@@ -53,6 +56,14 @@ class EventData:
             logger.error("Add event of undeclared channel {}".format(channel))
             raise BaseException("Problem")
         self._d = pd.concat([self._d, pd.DataFrame.from_records([{"T": t, "event_name": channel, "value": val}])], ignore_index=True)
+        self._is_updated=False
+
+    def add_events(self, d):
+        for ev in d:
+            if not ev["event_name"] in self._channels:
+                logger.error("Add event of undeclared channel {}".format(ev["event_name"]))
+                raise BaseException("Problem")
+        self._d = pd.concat([self._d, pd.DataFrame.from_records(d)],  ignore_index=True)
         self._is_updated=False
         
     @property
@@ -119,7 +130,7 @@ class EventData:
             
     def draw_plot(self, ax = None):
         self._update()
-        from src.event_dataframe.draw_events import draw_events
+        from event_dataframe.draw_events import draw_events
 
         return draw_events(self._d, self.channels, ax)
             
