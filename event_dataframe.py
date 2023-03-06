@@ -7,6 +7,7 @@ logger=logging.getLogger(__name__)
 class ChannelInfo:
     name: str
     type: str
+    draw_color:str = None
     start_value: Any | None
     metadata: Any | None
     def __init__(self, name:str, type: str, start_value=None, metadata=None):
@@ -16,6 +17,15 @@ class ChannelInfo:
         self.type=type
         self.start_value = start_value
         self.metadata=metadata
+
+    def __str__(self):
+        return "{}:{}".format(self.name, self.type)
+    
+    def __repr__(self):
+        return "{}:{}".format(self.name, self.type)
+    
+    def copy(self):
+        return ChannelInfo(self.name, self.type, self.start_value, self.metadata)
      
 class EventData:
     _d : pd.DataFrame
@@ -34,7 +44,7 @@ class EventData:
         self._channels[name] = ChannelInfo(name, type, start_value)
         if type=="state":
             self._d[name] = None
-        if start_value:
+        if start_value!=None:
              self.add_event(0, name, start_value)
         self._is_updated=False
             
@@ -52,7 +62,7 @@ class EventData:
     
     @property
     def channels(self):
-        return self._channels.copy()
+        return {n:c.copy() for n,c in self._channels.items()}
     
     def __str__(self):
         return self.dataframe.__str__()
@@ -109,43 +119,10 @@ class EventData:
             
     def draw_plot(self, ax = None):
         self._update()
-        import matplotlib.pyplot as plt
-        if not ax:
-            _, ax = plt.subplots()
+        from draw_events import draw_events
+
+        return draw_events(self._d, self.channels, ax)
             
-        ax.yaxis.set_visible(False)
-        ax.set_ylim([0, len(self._channels)])
-        for i,n in enumerate(self._channels.keys()):
-            if self._channels[n].type=="state":
-                d = self._d
-                max_val = d["value"][d["event_name"]==n].max()
-                min_val = d["value"][d["event_name"]==n].min()
-                    
-                
-                def position(val):
-                    if max_val!=min_val:
-                        return i+0.1 + ((val-min_val)/(max_val-min_val))*0.8
-                    else:
-                        return i+0.5+val*0
-                
-                if max_val or max_val==0:
-                    hliney=position(d["value"][d["event_name"]==n])
-                    hlines=d["T"][d["event_name"]==n]
-                    
-                    vlinesx=(d["T"][d["event_name"]==n])
-                    vlines=position(d["value"][d["event_name"]==n])
-                    
-                    ax.hlines(hliney.iloc[:-1], hlines.iloc[:-1], hlines.iloc[1:], color="C"+str(i))
-                    ax.hlines(hliney.iloc[-1:], hlines.iloc[-1:], [d["T"].max()], color="C"+str(i))
-                    ax.vlines(vlinesx.iloc[1:], vlines.iloc[:-1], vlines.iloc[1:], color="C"+str(i))
-            else:
-                ax.vlines(d["T"][d["event_name"]==n], i+0.1, i+0.9, color="C"+str(i))            
-            ax.text(0, i+0.5, n+"    ", horizontalalignment="right", color="C"+str(i))
-        ax.spines[["left", "top", "right"]].set_visible(False)
-        ax.set_xlabel("time (s)")
-        ax.margins(y=0.3)
-        return ax
-    
     
 if __name__ == "__main__":
     import beautifullogger
@@ -158,7 +135,7 @@ if __name__ == "__main__":
     logging.getLogger("PIL").setLevel(logging.WARNING)
     
     ed = EventData(100)
-    ed.add_channel("reward", type="state", start_value=4)  
+    ed.add_channel("reward", type="state", start_value=0)  
     ed.add_channel("lever", type="state", start_value=3)  
     ed.add_channel("spike", type="trigger") 
     ed.add_event(4, "reward", 4) 
@@ -169,10 +146,17 @@ if __name__ == "__main__":
     ed.add_event(12, "lever", 1)
     ed.add_event(16, "reward", 1)
     ed.add_event(8, "reward", 1)
-    ed.add_event(20, "reward", 1)
+    ed.add_event(20, "reward", 2)
     print(ed.get_summary())
     print(ed.to_string())
     
+    d = ed.dataframe
+    d2 = d[(d["event_name"]!="reward") | ((d["event_name"]=="reward") & (d["value"] > d["old_value"]))]
+    c2 = ed.channels
+    c2["reward"].type="trigger"
+    print(ed.channels)
     fig, ax = plt.subplots()
-    ed.draw_plot(ax)
+    from draw_events import draw_events
+    
+    draw_events(d2, c2, ax)
     plt.show()
