@@ -155,6 +155,7 @@ if __name__ == "__main__":
     beautifullogger.setup()
     
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    logging.getLogger("PIL").setLevel(logging.WARNING)
     
     ed = EventData(100)
     ed.add_channel("reward", type="state", start_value=4)  
@@ -173,8 +174,5 @@ if __name__ == "__main__":
     print(ed.to_string())
     
     fig, ax = plt.subplots()
-    # fig.canvas.setWindowTitle('Test')
     ed.draw_plot(ax)
-    fig.show()
-    # import time
-    # time.sleep(30) # Sleep for 3 seconds
+    plt.show()
