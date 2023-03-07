@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import List, Tuple, Any, Dict
+from typing import List, Tuple, Any, Dict, Union
 import logging
 
 logger=logging.getLogger(__name__)
@@ -8,8 +8,8 @@ class ChannelInfo:
     name: str
     type: str
     draw_color:str = None
-    start_value: Any | None
-    metadata: Any | None
+    start_value: Union[Any, None]
+    metadata: Union[Any, None]
     def __init__(self, name:str, type: str, start_value=None, metadata=None):
         self.name=name
         if type != "trigger" and type != "state":
@@ -39,7 +39,16 @@ class EventData:
         else:
             self._d = pd.DataFrame([], columns=["T", "event_name", "value", "old_value", "duration"])
         self._duration=duration
-       
+
+    def from_channels_and_dataframe(self, channels: Dict[str, ChannelInfo], d: pd.DataFrame):
+        #Not debugged
+        self._channels=channels
+        self._d=d
+        for n in channels.keys():
+            if channels[n].start_value!=None:
+                self.add_event(0, n, channels[n].start_value)
+        self._is_updated=False
+
     def add_channel(self, name: str, type: str, start_value: Any=None):
         if name in self._channels:
             logger.error("Add channel called with {} but a channel with the same name already exists.".format(name))

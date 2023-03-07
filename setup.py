@@ -4,7 +4,7 @@ from distutils.core import setup
 setup(
     name='event_dataframe',
     packages=['event_dataframe'],
-    version='0.1',
+    version='0.2',
     license='MIT',
     description = 'A simple dataframe format to store events',
     description_file = "README.md",
